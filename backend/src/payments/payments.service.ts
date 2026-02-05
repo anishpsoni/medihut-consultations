@@ -8,15 +8,15 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class PaymentsService {
-  private razorpay: Razorpay;
+  private razorpay: any;
 
   constructor(
     private configService: ConfigService,
     private supabaseService: SupabaseService,
   ) {
     this.razorpay = new Razorpay({
-      key_id: this.configService.get<string>('RAZORPAY_KEY_ID'),
-      key_secret: this.configService.get<string>('RAZORPAY_KEY_SECRET'),
+      key_id: this.configService.get<string>('RAZORPAY_KEY_ID') || 'dummy_key_id',
+      key_secret: this.configService.get<string>('RAZORPAY_KEY_SECRET') || 'dummy_key_secret',
     });
   }
 

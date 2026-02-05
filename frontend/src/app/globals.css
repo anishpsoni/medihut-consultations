@@ -12,11 +12,14 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 body {
   color: #1a1a1a;
   background: #ffffff;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 a {
@@ -28,4 +31,87 @@ a {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Clean white theme inspired by modern medical apps */
+.clean-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.clean-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  /* Pill shape */
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 32px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+}
+
+.primary-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  /* Pill shape */
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 32px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: white;
+  color: #1a1a1a;
+  border: 1px solid #e5e7eb;
+}
+
+.secondary-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.clean-input {
+  appearance: none;
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+}
+
+.clean-input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+.clean-input::placeholder {
+  color: #9ca3af;
+}
+
+.gradient-text {
+  color: #1a1a1a;
 }

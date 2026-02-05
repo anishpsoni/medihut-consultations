@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001/api';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -30,11 +30,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        window.location.href = '/auth/signin';
+      // Don't redirect if we are already on an auth page or if the error is from an auth endpoint
+      const isAuthEndpoint = error.config?.url?.includes('/auth/');
+      const isAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth/');
+
+      if (!isAuthEndpoint && !isAuthPage) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          window.location.href = '/auth/signin';
+        }
       }
     }
     return Promise.reject(error);
