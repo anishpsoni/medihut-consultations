@@ -10,136 +10,94 @@ export enum AppointmentStatus {
   CANCELLED = 'cancelled',
 }
 
+// In-memory mock storage
+const MOCK_APPOINTMENTS: any[] = [];
+
 @Injectable()
 export class AppointmentsService {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) { }
 
   async createAppointment(patientId: string, createAppointmentDto: CreateAppointmentDto) {
-    const supabase = this.supabaseService.getClient();
-
-    // Check if slot is available
-    const { data: existingAppointment } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('doctor_id', createAppointmentDto.doctor_id)
-      .eq('appointment_date', createAppointmentDto.appointment_date)
-      .eq('time_slot', createAppointmentDto.time_slot)
-      .eq('status', AppointmentStatus.CONFIRMED)
-      .single();
+    // Check if slot is available (mock check)
+    const existingAppointment = MOCK_APPOINTMENTS.find(
+      (a) =>
+        a.doctor_id === createAppointmentDto.doctor_id &&
+        a.appointment_date === createAppointmentDto.appointment_date &&
+        a.time_slot === createAppointmentDto.time_slot &&
+        a.status === AppointmentStatus.CONFIRMED
+    );
 
     if (existingAppointment) {
       throw new BadRequestException('Time slot is already booked');
     }
 
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert({
-        id: uuidv4(),
-        patient_id: patientId,
-        doctor_id: createAppointmentDto.doctor_id,
-        appointment_date: createAppointmentDto.appointment_date,
-        time_slot: createAppointmentDto.time_slot,
-        reason: createAppointmentDto.reason,
-        status: AppointmentStatus.PENDING,
-      })
-      .select()
-      .single();
+    const newAppointment = {
+      id: uuidv4(),
+      patient_id: patientId,
+      doctor_id: createAppointmentDto.doctor_id,
+      appointment_date: createAppointmentDto.appointment_date,
+      time_slot: createAppointmentDto.time_slot,
+      reason: createAppointmentDto.reason,
+      status: AppointmentStatus.CONFIRMED, // Auto-confirm for demo
+      created_at: new Date().toISOString(),
+      meet_link: `https://meet.google.com/${Math.random().toString(36).substr(2, 3)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 3)}`,
+    };
 
-    if (error) {
-      throw new BadRequestException('Failed to create appointment');
-    }
+    MOCK_APPOINTMENTS.push(newAppointment);
 
-    return data;
+    // Mock delay to simulate network
+    // await new Promise(resolve => setTimeout(resolve, 500));
+
+    return newAppointment;
   }
 
   async getAppointmentById(appointmentId: string) {
-    const supabase = this.supabaseService.getClient();
+    const appointment = MOCK_APPOINTMENTS.find((a) => a.id === appointmentId);
 
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(`
-        *,
-        patient:users!appointments_patient_id_fkey(*),
-        doctor:doctors(*)
-      `)
-      .eq('id', appointmentId)
-      .single();
-
-    if (error || !data) {
+    if (!appointment) {
       throw new NotFoundException('Appointment not found');
     }
 
-    return data;
+    // Populate (mock)
+    return {
+      ...appointment,
+      doctor: { full_name: 'Dr. Mock Doctor', specialty: 'General' }, // Simplified mock population
+      patient: { full_name: 'Mock Patient' },
+    };
   }
 
   async getPatientAppointments(patientId: string, status?: string) {
-    const supabase = this.supabaseService.getClient();
-
-    let query = supabase
-      .from('appointments')
-      .select(`
-        *,
-        doctor:doctors(*,users(*))
-      `)
-      .eq('patient_id', patientId)
-      .order('appointment_date', { ascending: false });
+    let appointments = MOCK_APPOINTMENTS.filter((a) => a.patient_id === patientId);
 
     if (status) {
-      query = query.eq('status', status);
+      appointments = appointments.filter((a) => a.status === status);
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      throw new BadRequestException('Failed to fetch appointments');
-    }
-
-    return data;
+    // Reverse sort by date (simplified string comparison)
+    return appointments.sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
   }
 
   async getDoctorAppointments(doctorId: string, status?: string) {
-    const supabase = this.supabaseService.getClient();
-
-    let query = supabase
-      .from('appointments')
-      .select(`
-        *,
-        patient:users!appointments_patient_id_fkey(*)
-      `)
-      .eq('doctor_id', doctorId)
-      .order('appointment_date', { ascending: false });
+    let appointments = MOCK_APPOINTMENTS.filter((a) => a.doctor_id === doctorId);
 
     if (status) {
-      query = query.eq('status', status);
+      appointments = appointments.filter((a) => a.status === status);
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      throw new BadRequestException('Failed to fetch appointments');
-    }
-
-    return data;
+    return appointments.sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
   }
 
   async updateAppointmentStatus(
     appointmentId: string,
     updateStatusDto: UpdateAppointmentStatusDto,
   ) {
-    const supabase = this.supabaseService.getClient();
-
-    const { data, error } = await supabase
-      .from('appointments')
-      .update({ status: updateStatusDto.status })
-      .eq('id', appointmentId)
-      .select()
-      .single();
-
-    if (error) {
-      throw new BadRequestException('Failed to update appointment status');
+    const index = MOCK_APPOINTMENTS.findIndex((a) => a.id === appointmentId);
+    if (index === -1) {
+      throw new BadRequestException('Appointment not found');
     }
 
-    return data;
+    MOCK_APPOINTMENTS[index].status = updateStatusDto.status;
+    return MOCK_APPOINTMENTS[index];
   }
 
   async cancelAppointment(appointmentId: string) {

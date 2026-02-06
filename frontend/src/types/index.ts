@@ -14,12 +14,14 @@ export interface User {
   address?: string;
   date_of_birth?: string;
   gender?: string;
+  blood_group?: string;
   created_at: string;
 }
 
 export interface Doctor {
   id: string;
   user_id: string;
+  full_name?: string; // Often joined from Users table, but needed for UI
   specialty: string;
   qualification: string;
   experience_years: number;
@@ -27,7 +29,11 @@ export interface Doctor {
   bio?: string;
   consultation_fee: number;
   languages?: string[];
+  image_url?: string;
+  rating?: number;
+  review_count?: number;
   is_verified: boolean;
+  available: boolean;
   users?: User;
 }
 

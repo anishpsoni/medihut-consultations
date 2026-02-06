@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User } from '@/types';
-import supabase from '@/lib/supabase';
-import apiClient from '@/lib/api';
+import { api } from '@/services/api';
 
 interface AuthState {
   user: User | null;
@@ -20,8 +19,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   isLoading: true,
 
-  setUser: (user) => set({ user }),
-  
+  setUser: (user) => {
+    set({ user });
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  },
+
   setAccessToken: (token) => {
     set({ accessToken: token });
     if (token) {
@@ -32,59 +38,53 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const response = await api.signIn({ email, password });
 
-    if (error) throw error;
-
-    if (data.session) {
-      get().setAccessToken(data.session.access_token);
-      
-      // Fetch user profile
-      const response = await apiClient.get('/auth/me');
-      set({ user: response.data.profile });
+      if (response.session) {
+        get().setAccessToken(response.session.access_token);
+        get().setUser(response.profile);
+      }
+    } catch (error) {
+      console.error("Signin failed", error);
+      throw error;
     }
   },
 
   signUp: async (email, password, fullName, role) => {
-    const response = await apiClient.post('/auth/signup', {
-      email,
-      password,
-      fullName,
-      role,
-    });
+    try {
+      const response = await api.signUp({ email, password, fullName, role });
 
-    if (response.data.session) {
-      get().setAccessToken(response.data.session.access_token);
-      set({ user: response.data.profile });
+      if (response.session) {
+        get().setAccessToken(response.session.access_token);
+        get().setUser(response.profile);
+      }
+    } catch (error) {
+      console.error("Signup failed", error);
+      throw error;
     }
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    await api.signOut();
     get().setAccessToken(null);
-    set({ user: null });
-    localStorage.removeItem('user');
+    get().setUser(null);
   },
 
   initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        get().setAccessToken(session.access_token);
-        
-        // Fetch user profile
-        const response = await apiClient.get('/auth/me');
-        set({ user: response.data.profile, isLoading: false });
-      } else {
-        set({ isLoading: false });
+    const token = localStorage.getItem('access_token');
+    const userStr = localStorage.getItem('user');
+
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        set({ accessToken: token, user, isLoading: false });
+      } catch (e) {
+        console.error("Failed to parse user from local storage", e);
+        set({ accessToken: token, isLoading: false });
       }
-    } catch (error) {
-      console.error('Initialize auth error:', error);
-      set({ isLoading: false });
+    } else {
+      set({ accessToken: token || null, isLoading: false });
     }
   },
 }));

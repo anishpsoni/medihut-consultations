@@ -10,70 +10,64 @@ export enum UserRole {
 
 @Injectable()
 export class AuthService {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) { }
 
   async signUp(signUpDto: SignUpDto) {
-    const supabase = this.supabaseService.getClient();
-
-    // Sign up with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // MOCK IMPLEMENTATION FOR DEMO
+    const mockUser = {
+      id: 'mock-user-id-' + Date.now(),
       email: signUpDto.email,
-      password: signUpDto.password,
-    });
+      role: signUpDto.role || 'authenticated',
+    };
 
-    if (authError) {
-      throw new UnauthorizedException(authError.message);
-    }
+    const mockSession = {
+      access_token: 'mock-access-token-' + Date.now(),
+      refresh_token: 'mock-refresh-token',
+      user: mockUser,
+    };
 
-    // Create user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
-        email: signUpDto.email,
-        full_name: signUpDto.fullName,
-        role: signUpDto.role || UserRole.PATIENT,
-        phone: signUpDto.phone,
-      })
-      .select()
-      .single();
-
-    if (profileError) {
-      // Rollback auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new UnauthorizedException('Failed to create user profile');
-    }
+    const profile = {
+      id: mockUser.id,
+      email: signUpDto.email,
+      full_name: signUpDto.fullName,
+      role: signUpDto.role || UserRole.PATIENT,
+      phone: signUpDto.phone,
+      created_at: new Date().toISOString(),
+    };
 
     return {
-      user: authData.user,
+      user: mockUser,
       profile,
-      session: authData.session,
+      session: mockSession,
     };
   }
 
   async signIn(signInDto: SignInDto) {
-    const supabase = this.supabaseService.getClient();
-
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // MOCK IMPLEMENTATION FOR DEMO
+    const mockUser = {
+      id: 'mock-user-id-signin',
       email: signInDto.email,
-      password: signInDto.password,
-    });
+      role: 'authenticated',
+    };
 
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+    const mockSession = {
+      access_token: 'mock-access-token-signin',
+      refresh_token: 'mock-refresh-token',
+      user: mockUser,
+    };
 
-    // Get user profile
-    const { data: profile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
+    const profile = {
+      id: mockUser.id,
+      email: signInDto.email,
+      full_name: 'Minhas Soni', // Mock Name
+      role: UserRole.PATIENT,
+      created_at: new Date().toISOString(),
+    };
 
     return {
-      user: data.user,
+      user: mockUser,
       profile,
-      session: data.session,
+      session: mockSession,
     };
   }
 
@@ -90,7 +84,7 @@ export class AuthService {
 
   async getCurrentUser(accessToken: string) {
     const supabase = this.supabaseService.getClient();
-    
+
     const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
     if (error || !user) {
